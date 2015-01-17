@@ -7,6 +7,8 @@
 \******************/
 
 var TicTacToe4D = (function() {
+    var obj = {};
+
     /**********
      * config */
     var dims = [800, 450]; //[width, height]
@@ -24,13 +26,13 @@ var TicTacToe4D = (function() {
     /*********************
      * working variables */
     var scene, camera, controls, renderer;
-    var gameState;
+    var gameState = [];
+    var playerTurn = 0;
 
     /******************
      * work functions */
     function init4DTicTacToe() {
         //misc working vars
-        gameState = [];
         for (var xi = 0; xi < S; xi++) {
             gameState.push([]);
             for (var yi = 0; yi < S; yi++) {
@@ -41,6 +43,11 @@ var TicTacToe4D = (function() {
             }
         }
 
+        //misc setup
+        $s('#x').max = S-1;
+        $s('#y').max = S-1;
+        $s('#z').max = S-1;
+
         //set up the three.js scene
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(75, dims[0]/dims[1], 0.1, 1000);
@@ -49,6 +56,7 @@ var TicTacToe4D = (function() {
         
         renderer = new THREE.WebGLRenderer();
         renderer.setSize(dims[0], dims[1]);
+        renderer.setClearColor(0xF0FAFC);
         $s(canvSel).appendChild(renderer.domElement);
         
         camera.position.x = -3.2, camera.position.y = 1.1, camera.position.z = 2.3;
@@ -63,21 +71,22 @@ var TicTacToe4D = (function() {
         //add the tic tac toe board
         addBoardGeometry();
 
-        //place random pieces
-        for (var xi = 0; xi < S; xi++) {
-            for (var yi = 0; yi < S; yi++) {
-                for (var zi = 0; zi < S; zi++) {
-                    placePiece(
-                        [xi, yi, zi],
-                        getRandInt(0, 2)
-                    );
-                }
-            }
-        }
+        //add the axes
+        drawAxes();
+
+        //event listeners
+        $s('#make-move').addEventListener('click', function() {
+            makeMove([
+                parseInt($s('#y').value),
+                parseInt($s('#z').value),
+                parseInt($s('#x').value)
+            ]); //axes are in this order for weird reasons...
+        });
 
         //initial rendering
         render();
     }
+    obj.init = init4DTicTacToe;
 
     function render() {
         requestAnimationFrame(render);
@@ -89,9 +98,27 @@ var TicTacToe4D = (function() {
 
     /********************
      * helper functions */
-    function placePiece(coords, player) {
-        gameState[coords[0]][coords[1]][coords[2]] = player;
+    function makeMove(coords) {
+        //spot not already taken
+        if (
+            coords[0] >= 0 && coords[0] < S &&
+            coords[1] >= 0 && coords[1] < S &&
+            coords[2] >= 0 && coords[2] < S &&
+            gameState[coords[0]][coords[1]][coords[2]] === -1
+        ) {
+            gameState[coords[0]][coords[1]][coords[2]] = playerTurn;
+            placePiece(coords, playerTurn);
+            //player = 0 or 1 so this toggles playerTurn
+            playerTurn = 1 - playerTurn;
+            $s('#move-error').innerHTML = '';
+            $s('#curr-player').className = 'color-'+playerTurn;
+            $s('#curr-player').innerHTML = 'Player '+(playerTurn+1);
+        } else {
+            $s('#move-error').innerHTML = 'Invalid move!';
+        }
+    }
 
+    function placePiece(coords, player) {
         var material =  new THREE.MeshLambertMaterial({
             color: pieceColors[player], shading: THREE.FlatShading,
             transparent: true, opacity: 0.8
@@ -103,16 +130,29 @@ var TicTacToe4D = (function() {
         ball.position.z = cellSize*(coords[2]-1)-0.5*(S-3);
         scene.add(ball);
     }
-    function addBoardGeometry() {
-        function getPlank(clr, sizes) {
-            var material =  new THREE.MeshLambertMaterial({
-                color: clr, shading: THREE.FlatShading
-            });
-            var geometry = new THREE.BoxGeometry(sizes.x, sizes.y, sizes.z);
-            var plank = new THREE.Mesh(geometry, material);
-            return plank;
-        }
 
+    function drawAxes() {
+        var xAxis = getPlank(0xFFFF00, {
+            x: S*cellSize, y: plankThickness, z: plankThickness
+        });
+        var yAxis = getPlank(0x00FFFF, {
+            x: plankThickness, y: S*cellSize, z: plankThickness
+        });
+        var zAxis = getPlank(0xFF00FF, {
+            x: plankThickness, y: plankThickness, z: S*cellSize
+        });
+        xAxis.position.y = -0.5*S*cellSize;
+        xAxis.position.z = -0.5*S*cellSize;
+        yAxis.position.x = -0.5*S*cellSize;
+        yAxis.position.z = -0.5*S*cellSize;
+        zAxis.position.x = -0.5*S*cellSize;
+        zAxis.position.y = -0.5*S*cellSize;
+        scene.add(xAxis);
+        scene.add(yAxis);
+        scene.add(zAxis);
+    }
+
+    function addBoardGeometry() {
         var dims = ['x', 'y', 'z'];
         var others = [['y', 'z'], ['x', 'z'], ['x', 'y']];
         for (var di = 0; di < D; di++) {
@@ -122,7 +162,7 @@ var TicTacToe4D = (function() {
                     sizes[dims[di]] = S*cellSize,
                     sizes[others[di][0]] = plankThickness,
                     sizes[others[di][1]] = plankThickness
-                    var plank = getPlank(0x00FF00, sizes);
+                    var plank = getPlank(0x777777, sizes);
                     plank.position[dims[di]] = 0;
                     plank.position[others[di][0]] = cellSize*ai-cellSize*CNTR;
                     plank.position[others[di][1]] = cellSize*bi-cellSize*CNTR;
@@ -130,6 +170,15 @@ var TicTacToe4D = (function() {
                 }
             }
         }
+    }
+
+    function getPlank(clr, sizes) {
+        var material =  new THREE.MeshLambertMaterial({
+            color: clr, shading: THREE.FlatShading
+        });
+        var geometry = new THREE.BoxGeometry(sizes.x, sizes.y, sizes.z);
+        var plank = new THREE.Mesh(geometry, material);
+        return plank;
     }
 
     function addLight(color, pos) {
@@ -153,7 +202,8 @@ var TicTacToe4D = (function() {
     }
 
     return {
-        init: init4DTicTacToe
+        init: init4DTicTacToe,
+        gameState: gameState
     };
 })();
 

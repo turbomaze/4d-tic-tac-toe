@@ -4,6 +4,18 @@
         <meta charset="UTF-8">
         <title>4D Tic Tac Toe</title>
 
+        <style>
+        .color-0 { color: red; }
+        .color-1 { color: blue; }
+        #x, #y, #z {
+            width: 60px;
+        }
+        #x { border-bottom: 3px solid #FF00FF; }
+        #y { border-bottom: 3px solid #FFFF00; }
+        #z { border-bottom: 3px solid #00FFFF; }
+        #move-error { color: red; }
+        </style>
+
         <script src="js/4dtictactoe.js"></script>
         <!-- WebGL made easy with Three.js -->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r70/three.min.js"></script>
@@ -12,5 +24,13 @@
     </head>
     <body>
         <div id="canvas" style="width: 80%"></div>
+        <span id="curr-player" class="color-0">Player 1</span>,
+        it's your move.
+        <br>
+        <input id="x" placeholder="x-coord" type="number" min="0" max="2">
+        <input id="y" placeholder="y-coord" type="number" min="0" max="2">
+        <input id="z" placeholder="z-coord" type="number" min="0" max="2">
+        <input type="button" id="make-move" value="Make move">
+        <span id="move-error"></span>
     </body>
 </html>
