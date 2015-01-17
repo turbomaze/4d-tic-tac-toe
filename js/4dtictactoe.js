@@ -84,7 +84,6 @@ var TicTacToe4D = (function() {
         //initial rendering
         render();
     }
-    obj.init = init4DTicTacToe;
 
     function render() {
         requestAnimationFrame(render);
