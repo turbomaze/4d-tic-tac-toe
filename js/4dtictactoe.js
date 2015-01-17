@@ -1,14 +1,12 @@
 /******************\
 |  4D Tic Tac Toe  |
 | @author Anthony  |
-| @version 0.1     |
+| @version 0.2     |
 | @date 2015/01/16 |
 | @edit 2015/01/16 |
 \******************/
 
 var TicTacToe4D = (function() {
-    var obj = {};
-
     /**********
      * config */
     var dims = [800, 450]; //[width, height]
