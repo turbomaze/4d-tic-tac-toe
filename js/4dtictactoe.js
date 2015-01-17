@@ -14,7 +14,7 @@ var TicTacToe4D = (function() {
     var plankThickness = 0.04; //how thick the barrier planks are
     var pieceColors = [0xFF0000, 0x0000FF];
     var D = 3; //number of dimensions
-    var S = 3; //side length
+    var S = 4; //side length
     var canvSel = '#canvas';
 
     /*************
@@ -79,6 +79,13 @@ var TicTacToe4D = (function() {
                 parseInt($s('#z').value),
                 parseInt($s('#x').value)
             ]); //axes are in this order for weird reasons...
+
+            var possWinner = thereIsALine();
+            if (possWinner !== -1) {
+                setTimeout(function() {
+                    alert('Player '+(possWinner+1)+' wins!');
+                }, 10);
+            }
         });
 
         //initial rendering
@@ -95,6 +102,103 @@ var TicTacToe4D = (function() {
 
     /********************
      * helper functions */
+    function thereIsALine(dimsIn, dimsOut) {
+        if (arguments.length === 0) {
+            dimsIn = [];
+            for (var di = 0; di < D; di++) dimsIn.push(di);
+            dimsOut = {};
+        }
+        if (dimsIn.length === 1) { //then just check that dim
+            var dc = [];
+            dc[dimsIn[0]] = 0;
+            for (var dim in dimsOut) {
+                dc[dim] = dimsOut[dim];
+            }
+            var lineOwner = accessArr(gameState, dc);
+            if (lineOwner === -1) return -1;
+            else {
+                for (var si = 1; si < S; si++) {
+                    dc[dimsIn[0]] = si;
+                    if (lineOwner !== accessArr(gameState, dc)) return -1;
+                }
+                return lineOwner;
+            }
+        } else {
+            function getBinVectorsUpTo(n, bits, scale) {
+                scale = scale || 0;
+                var ret = [];
+                for (var ai = 0; ai < n; ai++) {
+                    var bin = ai.toString(2);
+                    var vect = [];
+                    for (var bi = 0; bi < bits-bin.length; bi++) {
+                        vect.push(0);
+                    }
+                    for (var bi = 0; bi < bin.length; bi++) {
+                        vect.push(scale*parseInt(bin.charAt(bi)));
+                    }
+                    ret.push(vect);
+                }
+                return ret;
+            }
+
+            //check the long diagonals of this space
+            var corners = getBinVectorsUpTo(
+                Math.pow(2, dimsIn.length-1), //# pairs of corners
+                dimsIn.length, S-1
+            );
+            var cornerVels = [];
+            for (var ci = 0; ci < corners.length; ci++) {
+                var vel = [];
+                for (var vi = 0; vi < corners[ci].length; vi++) {
+                    vel.push(1 - 2*corners[ci][vi]/(S-1));
+                }
+                cornerVels.push(vel);
+            }
+            var baseCoords = [];
+            for (var dim in dimsOut) baseCoords[dim] = dimsOut[dim];
+            for (var ci = 0; ci < corners.length; ci++) {
+                var dc = baseCoords.slice(0); //starting cell
+                for (var ii = 0; ii < dimsIn.length; ii++) {
+                    dc[dimsIn[ii]] = corners[ci][ii];
+                }
+                var lineOwner = accessArr(gameState, dc);
+                if (lineOwner !== -1) {
+                    var everythingMatchedUp = true;
+                    for (var si = 1; si < S; si++) {
+                        for (var ii = 0; ii < dimsIn.length; ii++) {
+                            dc[dimsIn[ii]] += cornerVels[ci][ii];
+                        }
+                        if (lineOwner !== accessArr(gameState, dc)) {
+                            everythingMatchedUp = false;
+                            break;
+                        }
+                    }
+                    if (everythingMatchedUp) return lineOwner;
+                }
+            }
+
+            //remove a dimension and check the smaller dimensional space
+            var foundALine = false;
+            for (var ii = 0; ii < dimsIn.length; ii++) {
+                var dmi = []; //dimsIn without ii
+                for (var ai = 0; ai < dimsIn.length; ai++) {
+                    if (ai !== ii) dmi.push(dimsIn[ai]);
+                }
+                var dmo = {}; //dimsOut with ii
+                for (var dim in dimsOut) {
+                    dmo[dim] = dimsOut[dim];
+                }
+                for (var si = 0; si < S; si++) {
+                    dmo[dimsIn[ii]] = si;
+                    foundALine = thereIsALine(dmi, dmo);
+                    if (foundALine !== -1) break;
+                }
+                if (foundALine !== -1) break;
+            }
+            return foundALine;
+        }
+    }
+
     function makeMove(coords) {
         //spot not already taken
         if (
@@ -193,6 +297,12 @@ var TicTacToe4D = (function() {
         return Math.floor(low + Math.random()*(high-low));
     }
 
+    function accessArr(arr, loc, idx) {
+        idx = idx || 0;
+        if (idx === loc.length-1) return arr[loc[idx]];
+        else return accessArr(arr[loc[idx]], loc, idx+1);
+    }
+
     function round(n, places) {
         var mult = Math.pow(10, places);
         return Math.round(mult*n)/mult;
@@ -200,6 +310,7 @@ var TicTacToe4D = (function() {
 
     return {
         init: init4DTicTacToe,
+        thereIsALine: thereIsALine,
         gameState: gameState
     };
 })();
