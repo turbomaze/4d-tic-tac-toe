@@ -42,22 +42,27 @@ var TicTacToe4D = (function() {
         camera.position.x = -3.2, camera.position.y = 1.1, camera.position.z = 2.3;
         camera.rotation.x = -0.5, camera.rotation.y = -0.9, camera.rotation.z = -0.4;
 
-        addLight(0xCCCCCC, [-100, 200, 100]);
-        addLight(0x888888, [100, 200, 100]);
-        addLight(0x666666, [0, -200, 100]);
+        addLight(0x666666, [-100, -100, 100]);
+        addLight(0x666666, [-100, 100, -100]);
+        addLight(0x666666, [-100, 100, 100]);
+        addLight(0x666666, [100, -100, 100]);
+        addLight(0x666666, [100, 100, -100]);
+        addLight(0x666666, [100, 100, 100]);
         
         //add the tic tac toe board
         addBoardGeometry();
 
-        var material =  new THREE.MeshLambertMaterial({
-            color:0x00FF00, shading: THREE.FlatShading
-        });
-        var geometry = new THREE.SphereGeometry(0.2, 16, 16);
-        var ball = new THREE.Mesh(geometry, material);
-        ball.position.x = 0;
-        ball.position.y = 0;
-        ball.position.z = 0;
-        scene.add(ball);
+        //place random pieces
+        for (var xi = 0; xi < 3; xi++) {
+            for (var yi = 0; yi < 3; yi++) {
+                for (var zi = 0; zi < 3; zi++) {
+                    placePiece(
+                        [xi, yi, zi],
+                        [0xFF0000, 0x0000FF][getRandInt(0, 2)]
+                    );
+                }
+            }
+        }
 
         render();
     }
@@ -72,6 +77,17 @@ var TicTacToe4D = (function() {
 
     /********************
      * helper functions */
+    function placePiece(coords, clr) {
+        var material =  new THREE.MeshLambertMaterial({
+            color: clr, shading: THREE.FlatShading
+        });
+        var geometry = new THREE.SphereGeometry(0.25*cellSize, 16, 16);
+        var ball = new THREE.Mesh(geometry, material);
+        ball.position.x = cellSize*(coords[0]-1);
+        ball.position.y = cellSize*(coords[1]-1);
+        ball.position.z = cellSize*(coords[2]-1);
+        scene.add(ball);
+    }
     function addBoardGeometry() {
         function getPlank(clr, sizes) {
             var material =  new THREE.MeshLambertMaterial({
