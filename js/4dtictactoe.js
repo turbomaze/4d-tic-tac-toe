@@ -1,7 +1,7 @@
 /******************\
 |  4D Tic Tac Toe  |
 | @author Anthony  |
-| @version 0.2     |
+| @version 0.201   |
 | @date 2015/01/16 |
 | @edit 2015/01/16 |
 \******************/
